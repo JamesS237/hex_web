@@ -55,24 +55,30 @@ defmodule HexWeb.API.Router do
   end
 
   defp handle_publish(conn, package, body) do
-    case HexWeb.Tar.metadata(body) do
-      {:ok, meta, checksum} ->
-        app     = meta["app"]
-        version = meta["version"]
-        reqs    = meta["requirements"] || %{}
+    safe = HexWeb.Tar.exceeds_maximum_size?(body)
 
-        if release = Release.get(package, version) do
-          result = Release.update(release, app, reqs, checksum)
-          if match?({:ok, _}, result), do: after_release(package, version, body)
-          send_update_resp(conn, result, :public)
-        else
-          result = Release.create(package, version, app, reqs, checksum)
-          if match?({:ok, _}, result), do: after_release(package, version, body)
-          send_creation_resp(conn, result, :public, api_url(["packages", package.name, "releases", version]))
-        end
+    if safe do
+      case HexWeb.Tar.metadata(body) do
+        {:ok, meta, checksum} ->
+          app     = meta["app"]
+          version = meta["version"]
+          reqs    = meta["requirements"] || %{}
 
-      {:error, errors} ->
-        send_validation_failed(conn, %{tar: errors})
+          if release = Release.get(package, version) do
+            result = Release.update(release, app, reqs, checksum)
+            if match?({:ok, _}, result), do: after_release(package, version, body)
+            send_update_resp(conn, result, :public)
+          else
+            result = Release.create(package, version, app, reqs, checksum)
+            if match?({:ok, _}, result), do: after_release(package, version, body)
+            send_creation_resp(conn, result, :public, api_url(["packages", package.name, "releases", version]))
+          end
+
+        {:error, errors} ->
+          send_validation_failed(conn, %{tar: errors})
+      end
+    else
+      send_validation_failed(conn, %{tar: "uncompressed size of the package exceeds the maximum limit"})
     end
   end
 

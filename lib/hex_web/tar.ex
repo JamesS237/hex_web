@@ -1,4 +1,5 @@
 defmodule HexWeb.Tar do
+  import Bitwise
   # The release tar contains the following files:
   # VERSION             - release tar version
   # CHECKSUM            - checksum of file contents sha256(VERSION <> metadata.exs <> contents.tar.gz)
@@ -8,6 +9,8 @@ defmodule HexWeb.Tar do
 
   @files_2 ["VERSION", "CHECKSUM", "metadata.exs", "contents.tar.gz"]
   @files_3 ["VERSION", "CHECKSUM", "metadata.config", "contents.tar.gz"]
+
+  @max_uncompressed 8388608 # 8MiB
 
   defmacrop if_ok(expr, call) do
     quote do
@@ -41,6 +44,22 @@ defmodule HexWeb.Tar do
       {:error, reason} ->
         {:error, inspect reason}
     end
+  end
+
+  def exceeds_maximum_size?(binary) do
+    case :erl_tar.extract({:binary, binary}, [:memory]) do
+      {:ok, files} ->
+        files = Enum.into(files, %{})
+
+        uncompressed_size(files['contents.tar.gz']) < @max_uncompressed
+      _ ->
+        false
+    end
+  end
+
+  defp uncompressed_size(binary) do
+    <<a, b, c, d>> = binary_part(binary, byte_size(binary), -4)
+    (d <<< 24) ||| (c <<< 16) + (b <<< 8) + a
   end
 
   defp version(files) do
