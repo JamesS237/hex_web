@@ -21,29 +21,37 @@
     sort_param = ""
   end
 
+  if @page == 1,
+    do:   page = nil,
+    else: page = @page
+
+  sort_name_params = url_params(search: @search, page: page, sort: "name")
+  sort_downloads_params = url_params(search: @search, page: page, sort: "downloads")
+  prev_page_params = url_params(search: @search, page: @page-1, sort: @sort)
+  next_page_params = url_params(search: @search, page: @page+1, sort: @sort)
   %>
 
   <span class="pull-left">
     <h4><%= @package_count %> Results Found</h4>
   </span>
 
-  <span class="pull-right">
-    <div class="dropdown">
-      <button class="btn btn-default dropdown-toggle" type="button" id="sort_dropdown" data-toggle="dropdown">
-        Sort By
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu" role="menu">
-        <li role="presentation">
-          <a role="menuitem" tabindex="-1" href="/packages?<%= safe(search_query) %>page=<%= @page %>&sort=name">Name</a>
-        </li>
+<span class="pull-right">
+  <div class="dropdown">
+    <button class="btn btn-default dropdown-toggle" type="button" id="sort_dropdown" data-toggle="dropdown">
+      Sort By
+      <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+      <li role="presentation">
+        <a role="menuitem" tabindex="-1" href="/packages<%= sort_name_params %>">Name</a>
+      </li>
 
-        <li role="presentation">
-          <a role="menuitem" tabindex="-1" href="/packages?<%= safe(search_query) %>page=<%= @page %>&sort=downloads">Downloads</a>
-        </li>
-      </ul>
-    </div>
-  </span>
+      <li role="presentation">
+        <a role="menuitem" tabindex="-1" href="/packages<%= sort_downloads_params %>">Downloads</a>
+      </li>
+    </ul>
+  </div>
+</span>
 
   <table class="table table-striped packages">
     <thead>
@@ -51,7 +59,7 @@
         <th style="width: 10em;">Name</th>
         <th>Description</th>
         <th style="width: 5em;">Latest</th>
-        <th style="width: 7em;`` text-align: right;">Downloads</th>
+        <th style="width: 7em; text-align: right;">Downloads</th>
       </tr>
     </thead>
     <tbody>
@@ -85,7 +93,7 @@
 
   <ul class="pagination pull-right">
     <%= if paginate[:prev] do %>
-      <li><a href="/packages?<%= safe(search_query) %>page=<%= @page-1 %><%= sort_param %>">&laquo;</a></li>
+      <li><a href="/packages<%= prev_page_params %>">&laquo;</a></li>
     <% else %>
       <li class="disabled"><span>&laquo;</span></li>
     <% end %>
@@ -97,7 +105,7 @@
         </li>
       <% else %>
         <li>
-          <a href="/packages?<%= safe(search_query) %>page=<%= counter %><%= sort_param %>">
+          <a href="/packages<%= url_params(search: @search, page: counter, sort: @sort) %>">
             <%= counter %>
           </a>
         </li>
@@ -105,7 +113,7 @@
     <% end %>
 
     <%= if paginate[:next] do %>
-      <li><a href="/packages?<%= safe(search_query) %>page=<%= @page+1 %><%= sort_param %>">&raquo;</a></li>
+      <li><a href="/packages<%= next_page_params %>">&raquo;</a></li>
     <% else %>
       <li class="disabled"><span>&raquo;</span></li>
     <% end %>
