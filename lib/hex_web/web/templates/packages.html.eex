@@ -9,18 +9,6 @@
   range_start = (@page - 1) * items_per_page + 1
   range_end   = range_start + shown_packages - 1
 
-  if present?(@search) do
-    search_query = "search=#{@search}&"
-  else
-    search_query = ""
-  end
-
-  if present?(@sort) do
-    sort_param = "&sort=#{@sort}"
-  else
-    sort_param = ""
-  end
-
   if @page == 1,
     do:   page = nil,
     else: page = @page
